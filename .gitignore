@@ -1,0 +1,33 @@
+cat << 'EOF' > .gitignore
+# 가상환경 및 캐시
+.venv/
+__pycache__/
+
+# 🚨 무거운 AI 체크포인트 및 모델 폴더 (어디에 있든 무조건 차단)
+**/final_context_model/
+**/final_jun_context_model/
+**/koelectra_slang_hunter_v3/
+**/checkpoint-*/
+**/models/
+**/tmp_checkpoints/
+
+# 🚨 학습 부산물 및 가중치 파일들 (이름까지 직접 저격)
+*.safetensors
+*.pt
+*.pth
+*.bin
+optimizer.pt
+rng_state.pth
+scheduler.pt
+trainer_state.json
+training_args.bin
+
+# 🚨 데이터셋
+**/data/
+*.csv
+*.xlsx
+
+# 기타 쓰레기 파일
+.DS_Store
+.vscode/
+EOF
