@@ -67,9 +67,13 @@
                             >
                                 <option selected>Select a Node by ID</option>
                                 
-                                    <option value="허현우">허현우</option>
+                                    <option value="소비자">소비자</option>
                                 
-                                    <option value="정준영">정준영</option>
+                                    <option value="판매자">판매자</option>
+                                
+                                    <option value="인물 2">인물 2</option>
+                                
+                                    <option value="인물 1">인물 1</option>
                                 
                             </select>
                         </div>
@@ -123,8 +127,8 @@
                   
 
                   // parsing and collecting nodes and edges from the python
-                  nodes = new vis.DataSet([{"borderWidth": 3, "color": {"background": "#ff2a2a", "border": "#ffffff"}, "font": {"color": "white"}, "id": "\ud5c8\ud604\uc6b0", "label": "\ud5c8\ud604\uc6b0", "shape": "dot", "size": 45, "title": "\ud610\uc758\uc790 (\ub9c8\uc57d \uc758\uc2ec)"}, {"borderWidth": 3, "color": {"background": "#ff2a2a", "border": "#ffffff"}, "font": {"color": "white"}, "id": "\uc815\uc900\uc601", "label": "\uc815\uc900\uc601", "shape": "dot", "size": 45, "title": "\ud610\uc758\uc790 (\ub9c8\uc57d \uc758\uc2ec)"}]);
-                  edges = new vis.DataSet([{"color": "#ff4d4d", "from": "\ud5c8\ud604\uc6b0", "smooth": {"type": "curvedCW"}, "to": "\uc815\uc900\uc601", "value": 6}]);
+                  nodes = new vis.DataSet([{"borderWidth": 1, "color": {"background": "#2a75ff", "border": "#88bbff"}, "font": {"color": "white"}, "id": "\uc18c\ube44\uc790", "label": "\uc18c\ube44\uc790", "shape": "dot", "size": 15, "title": "\uc77c\ubc18 \uc0ac\uc6a9\uc790"}, {"borderWidth": 1, "color": {"background": "#2a75ff", "border": "#88bbff"}, "font": {"color": "white"}, "id": "\ud310\ub9e4\uc790", "label": "\ud310\ub9e4\uc790", "shape": "dot", "size": 15, "title": "\uc77c\ubc18 \uc0ac\uc6a9\uc790"}, {"borderWidth": 1, "color": {"background": "#2a75ff", "border": "#88bbff"}, "font": {"color": "white"}, "id": "\uc778\ubb3c 2", "label": "\uc778\ubb3c 2", "shape": "dot", "size": 15, "title": "\uc77c\ubc18 \uc0ac\uc6a9\uc790"}, {"borderWidth": 1, "color": {"background": "#2a75ff", "border": "#88bbff"}, "font": {"color": "white"}, "id": "\uc778\ubb3c 1", "label": "\uc778\ubb3c 1", "shape": "dot", "size": 15, "title": "\uc77c\ubc18 \uc0ac\uc6a9\uc790"}]);
+                  edges = new vis.DataSet([]);
 
                   nodeColors = {};
                   allNodes = nodes.get({ returnType: "Object" });

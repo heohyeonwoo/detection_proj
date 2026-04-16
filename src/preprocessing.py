@@ -82,23 +82,34 @@ class DataPreprocessor:
                     except Exception: continue
                 if not success: fail_count += 1
 
-            # CSV 형식 처리 (엑셀 데이터)
             elif ext == 'csv':
                 success = False
                 for enc in encodings_to_try:
                     try:
                         temp_df = pd.read_csv(file_path, encoding=enc)
-                        msg_cols = [c for c in temp_df.columns if 'msg' in c.lower() or 'text' in c.lower() or '내용' in c or '대화' in c]
-                        sender_cols = [c for c in temp_df.columns if 'sender' in c.lower() or 'user' in c.lower() or '발신' in c or '작성자' in c]
-                        date_cols = [c for c in temp_df.columns if 'date' in c.lower() or 'time' in c.lower() or '일시' in c or '시간' in c]
                         
-                        if msg_cols:
+                        # 1. 헤더 무시하고 무조건 첫 번째(0번), 두 번째(1번) 열만 추출
+                        if len(temp_df.columns) >= 2:
+                            temp_df = temp_df.iloc[:, :2]
+                            temp_df.columns = ['sender', 'message']
+                            
+                            # 2. '인물'이라는 글자가 보낸 사람 이름으로 들어갔다면 행 삭제
+                            if temp_df['sender'].astype(str).str.contains('인물').any():
+                                temp_df = temp_df[temp_df['sender'] != '인물']
+                                
+                            # 3. 빈칸(결측치) 완벽 필터링
+                            temp_df = temp_df.dropna(subset=['message'])
+                            temp_df = temp_df[temp_df['message'].astype(str).str.strip() != '']
+                            
+                            # 4. parsed_data 리스트에 통합
                             for _, row in temp_df.iterrows():
-                                msg = str(row[msg_cols[0]])
-                                sndr = str(row[sender_cols[0]]) if sender_cols else "Unknown"
-                                dt = pd.to_datetime(row[date_cols[0]], errors='coerce') if date_cols else datetime.now()
-                                if pd.isna(dt): dt = datetime.now()
-                                parsed_data.append({'datetime': dt, 'sender': sndr, 'message': msg, 'is_media': 0})
+                                msg = str(row['message']).strip()
+                                parsed_data.append({
+                                    'datetime': datetime.now(),
+                                    'sender': str(row['sender']).strip(),
+                                    'message': msg,
+                                    'is_media': 1 if msg.startswith("사진") or "이모티콘" in msg else 0
+                                })
                         success = True
                         break
                     except Exception: continue

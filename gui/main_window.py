@@ -2,10 +2,9 @@ import os
 import sys
 import pandas as pd
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QTextEdit, QFileDialog
-from PyQt6 import QtGui 
+from PyQt6 import QtGui
 from google import genai
 
-# DLL 에러 없앨려면 하래 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 if os.name == 'nt':
     torch_lib_path = r'C:\Users\82109\AppData\Local\Programs\Python\Python312\Lib\site-packages\torch\lib'
@@ -18,8 +17,7 @@ from src.nlp_model import KoBERTModel
 from src.graph_model import GNNModel
 from src.visualization import GraphVisualizer
 
-# 제미나이 API 요약 기능 넣어 볼려고 써보는중 ..
-GEMINI_API_KEY = "AIzaSyDkgoXZKhIKkQOvd73Uzd6_jCCxkI9GtmI" 
+GEMINI_API_KEY = "AIzaSyCxZOX6SnW-1M0tsywkYxOzEXZnBH_73qI"
 
 class DetectionApp(QMainWindow):
     def __init__(self):
@@ -93,16 +91,15 @@ class DetectionApp(QMainWindow):
             self.log_console.append("----------------------------------")
 
             self.log_console.append("\n[Process] 전체 대화 흐름을 분석하여 요약을 작성 중입니다...")
-            QApplication.processEvents() 
+            QApplication.processEvents()
             
             summary_text = ""
             try:
-                if GEMINI_API_KEY != "여기에_발급받은_키를_붙여넣으세요":
-                    # 최신 모델 
+                if GEMINI_API_KEY != "새로운_API_키를_입력하세요":
                     client = genai.Client(api_key=GEMINI_API_KEY)
                     
                     filtered_df = df[~df['sender'].str.contains("방장봇|봇|시스템|참여", na=False)]
-                    chat_log = "\n".join(filtered_df['message'].astype(str).tolist()[-1200:]) 
+                    chat_log = "\n".join(filtered_df['message'].astype(str).tolist()[-1200:])
                     
                     prompt = (
                         "너는 범죄 수사관을 돕는 데이터 요약 전문가야. 아래의 대화 로그를 읽고, "
@@ -136,7 +133,7 @@ class DetectionApp(QMainWindow):
                 f"===================================\n"
             )
             self.log_console.append(summary)
-            self.scroll_to_bottom() 
+            self.scroll_to_bottom()
         else:
             self.log_console.append("[Error] 데이터 로드에 실패했습니다.")
             self.scroll_to_bottom()
@@ -148,37 +145,52 @@ class DetectionApp(QMainWindow):
             self.scroll_to_bottom()
             return
             
-        self.log_console.append("[Process] 3. AI 분석 가동 중 ")
+        self.log_console.append("[Process] 3. 투트랙 AI 분석 가동 중... ")
         self.scroll_to_bottom()
         QApplication.processEvents()
         
         behavior_score = self.preprocessor.to_tensor()
         nlp = KoBERTModel(self.preprocessor.df)
         
-        messages_list = self.preprocessor.df['message'].tolist()
-        nlp_score = nlp.get_context_score(messages=messages_list)
+        nlp_score = nlp.get_context_score()
         
+        if nlp_score is None:
+            self.log_console.append("[Error] AI 분석 중 오류가 발생했습니다.")
+            return
+
         self.preprocessor.df['nlp_score'] = nlp_score.numpy()
+        
+        # AI 모델이 죽어서 모두 0점인지 확인하는 체크 로직
+        max_nlp_score = self.preprocessor.df['nlp_score'].max()
+        if max_nlp_score == 0.0:
+            self.log_console.append("\n AI 모델 로딩 실패!")
+            self.log_console.append(" -> AI 폴더 안에 파일이 제대로 있는지,")
+            self.log_console.append(" -> 뒤에 켜져 있는 까만색 터미널 창의 [Error] 메시지를 반드시 확인하십시오!")
         
         gnn = GNNModel(self.preprocessor.df, nlp_score, behavior_score)
         result_dict = gnn.run_message_passing()
         
-        if not self.preprocessor.df.empty:
+        if not self.preprocessor.df.empty and max_nlp_score > 0.5:
             top_suspect = self.preprocessor.df.groupby('sender')['nlp_score'].max().idxmax()
             result_dict[top_suspect] = 1  
             
         suspects_list = [person for person, is_criminal in result_dict.items() if is_criminal == 1]
-        self.log_console.append(f"\n 최종 탐지된 혐의자: {suspects_list}")
-
-        self.log_console.append("\n[결정적 증거] 시스템이 탐지한 모든 위험 대화 내역")
         
-        evidence_df = self.preprocessor.df[self.preprocessor.df['nlp_score'] > 0.1].sort_values(by='nlp_score', ascending=True)
+        if suspects_list:
+            self.log_console.append(f"\n[Result] 최종 탐지된 혐의자: {suspects_list}")
+        else:
+            self.log_console.append(f"\n[Result] 최종 탐지된 혐의자: 없음")
+
+        self.log_console.append("\n[결정적 증거] 시스템이 탐지한 전체 대화 위험도 목록 (위험도 낮은 순 -> 높은 순)")
+        
+    
+        evidence_df = self.preprocessor.df[self.preprocessor.df['nlp_score'] > 0.0].sort_values(by='nlp_score', ascending=True)
         
         if not evidence_df.empty:
             for _, row in evidence_df.iterrows():
-                self.log_console.append(f" * ({row['datetime']}) [{row['sender']}] : {row['message']} (위험도: {row['nlp_score']:.2f})")
+                self.log_console.append(f" * ({row['datetime']}) [{row['sender']}] : {row['message']} (위험도: {row['nlp_score']:.4f})")
         else:
-            self.log_console.append(" 위험 징후가 발견된 대화가 없습니다.")
+            self.log_console.append(" -> AI 모델이 분석한 대화가 0건입니다. (모델 로딩 에러)")
         
         self.log_console.append("\n[Process] 마약 조직망 엣지/노드 시각화 렌더링 중...")
         self.scroll_to_bottom()
